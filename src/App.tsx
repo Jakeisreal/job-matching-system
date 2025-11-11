@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Search,
-  Award,
-  BookOpen,
-  Briefcase,
-  CheckCircle,
-  Users,
-  Upload,
-  Download,
-  FileSpreadsheet,
-} from "lucide-react";
+import { Search, Award, BookOpen, Briefcase, CheckCircle, Users, Upload, Download, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const JobMajorMatchingSystem = () => {
@@ -400,7 +390,6 @@ const JobMajorMatchingSystem = () => {
 
   useEffect(() => {
     if (uploadedData.length > 0) evaluateBatchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadedData]);
 
   return (
@@ -690,8 +679,7 @@ const JobMajorMatchingSystem = () => {
                       • <strong>S등급</strong>: 90점 이상 (최우수)
                     </div>
                     <div>
-                      • <strong>필수 자격증</strong>: 직무별 필수 자격증 보유
-                      여부
+                      • <strong>필수 자격증</strong>: 직무별 필수 자격증 보유 여부
                     </div>
                     <div>
                       • <strong>A등급</strong>: 80-89점 (우수)
@@ -740,8 +728,7 @@ const JobMajorMatchingSystem = () => {
                   <p className="text-gray-600">
                     좌측에서 평가하고 싶은 직무를 선택하시면
                     <br />
-                    해당 직무와 관련된 전공 및 자격증 매칭 결과를 확인할 수
-                    있습니다
+                    해당 직무와 관련된 전공 및 자격증 매칭 결과를 확인할 수 있습니다
                   </p>
                 </div>
               ) : (
@@ -754,16 +741,12 @@ const JobMajorMatchingSystem = () => {
                   </div>
 
                   <div className="p-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl text-center">
-                    <BookOpen
-                      className="mx-auto mb-4 text-blue-600"
-                      size={64}
-                    />
+                    <BookOpen className="mx-auto mb-4 text-blue-600" size={64} />
                     <h3 className="text-2xl font-bold text-gray-800 mb-4">
                       직무별 전공/자격증 기준 확인
                     </h3>
                     <p className="text-gray-600 mb-6">
-                      {selectedJob.role} 직무에 필요한 전공과 자격증 정보를
-                      확인하세요
+                      {selectedJob.role} 직무에 필요한 전공과 자격증 정보를 확인하세요
                     </p>
 
                     <div className="grid md:grid-cols-2 gap-6 text-left">
@@ -776,10 +759,7 @@ const JobMajorMatchingSystem = () => {
                           {jobMajorRules[selectedJob.role]?.highMatch.map(
                             (major, idx) => (
                               <li key={idx} className="flex items-center gap-2">
-                                <CheckCircle
-                                  className="text-green-500"
-                                  size={16}
-                                />
+                                <CheckCircle className="text-green-500" size={16} />
                                 <span className="text-sm">{major}</span>
                               </li>
                             )
@@ -793,24 +773,20 @@ const JobMajorMatchingSystem = () => {
                           필수/우대 자격증
                         </h4>
                         <div className="space-y-3">
-                          {jobCertificateRules[selectedJob.role]?.essential
-                            .length > 0 && (
+                          {jobCertificateRules[selectedJob.role]?.essential.length > 0 && (
                             <div>
                               <p className="text-xs font-bold text-red-600 mb-2">
                                 필수 자격증
                               </p>
                               <ul className="space-y-1">
-                                {jobCertificateRules[
-                                  selectedJob.role
-                                ].essential.map((cert, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="flex items-center gap-2"
-                                  >
-                                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                    <span className="text-sm">{cert}</span>
-                                  </li>
-                                ))}
+                                {jobCertificateRules[selectedJob.role].essential.map(
+                                  (cert, idx) => (
+                                    <li key={idx} className="flex items-center gap-2">
+                                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                      <span className="text-sm">{cert}</span>
+                                    </li>
+                                  )
+                                )}
                               </ul>
                             </div>
                           )}
@@ -822,14 +798,8 @@ const JobMajorMatchingSystem = () => {
                               {jobCertificateRules[selectedJob.role]?.highMatch
                                 .slice(0, 3)
                                 .map((cert, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="flex items-center gap-2"
-                                  >
-                                    <CheckCircle
-                                      className="text-blue-500"
-                                      size={14}
-                                    />
+                                  <li key={idx} className="flex items-center gap-2">
+                                    <CheckCircle className="text-blue-500" size={14} />
                                     <span className="text-sm">{cert}</span>
                                   </li>
                                 ))}
@@ -841,8 +811,8 @@ const JobMajorMatchingSystem = () => {
 
                     <div className="mt-8 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
                       <p className="text-sm text-gray-700">
-                        💡 <strong>Tip:</strong> 상단의 "일괄 평가" 버튼을
-                        클릭하여 여러 지원자를 한 번에 평가할 수 있습니다.
+                        💡 <strong>Tip:</strong> 상단의 "일괄 평가" 버튼을 클릭하여
+                        여러 지원자를 한 번에 평가할 수 있습니다.
                       </p>
                     </div>
                   </div>
@@ -887,8 +857,7 @@ const JobMajorMatchingSystem = () => {
             </h4>
             <div className="text-sm space-y-1 opacity-90">
               <p>
-                • <strong>필수 컬럼:</strong> 이름, 생년월일, 지원직무, 전공,
-                자격증
+                • <strong>필수 컬럼:</strong> 이름, 생년월일, 지원직무, 전공, 자격증
               </p>
               <p>
                 • <strong>생년월일 형식:</strong> yyyy.mm.dd (예: 1995.03.15)
