@@ -34,3 +34,13 @@
     "not op_mini all"
   ]
 }
+{
+  "homepage": "https://[your-username].github.io/[repository-name]",
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "devDependencies": {
+    "gh-pages": "^5.0.0"
+  }
+}
