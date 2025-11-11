@@ -35,26 +35,12 @@ const JobMajorMatchingSystem = () => {
 
   const jobMajorRules = {
     HR: {
-      highMatch: [
-        "인사조직",
-        "인사관리",
-        "심리학",
-        "산업심리",
-        "경영학",
-        "경영정보",
-      ],
+      highMatch: ["인사조직", "인사관리", "심리학", "산업심리", "경영학", "경영정보"],
       mediumMatch: ["행정학", "사회학", "교육학", "노사관계", "법학"],
       keywords: ["인사", "조직", "심리", "경영", "관리", "교육"],
     },
     해외법인관리: {
-      highMatch: [
-        "경영학",
-        "국제경영",
-        "회계학",
-        "경제학",
-        "무역학",
-        "국제통상",
-      ],
+      highMatch: ["경영학", "국제경영", "회계학", "경제학", "무역학", "국제통상"],
       mediumMatch: ["경영정보", "재무금융", "국제학", "글로벌경영"],
       keywords: ["경영", "회계", "경제", "무역", "국제", "금융"],
     },
@@ -74,23 +60,9 @@ const JobMajorMatchingSystem = () => {
       keywords: ["기계", "경영", "마케팅", "자동차", "산업"],
     },
     생산기술: {
-      highMatch: [
-        "기계공학",
-        "자동차공학",
-        "금속공학",
-        "메카트로닉스",
-        "산업공학",
-      ],
+      highMatch: ["기계공학", "자동차공학", "금속공학", "메카트로닉스", "산업공학"],
       mediumMatch: ["전기공학", "전자공학", "재료공학", "생산공학"],
-      keywords: [
-        "기계",
-        "자동차",
-        "금속",
-        "메카트로닉스",
-        "산업",
-        "전기",
-        "생산",
-      ],
+      keywords: ["기계", "자동차", "금속", "메카트로닉스", "산업", "전기", "생산"],
     },
     공정관리: {
       highMatch: ["기계공학", "자동차공학", "산업공학", "생산공학"],
@@ -159,15 +131,7 @@ const JobMajorMatchingSystem = () => {
       essential: ["기계기사", "일반기계기사"],
       highMatch: ["자동차정비기사", "금형기사", "메카트로닉스기사"],
       mediumMatch: ["전기기사", "용접기사", "기계설계기사"],
-      keywords: [
-        "기계",
-        "자동차",
-        "금형",
-        "메카트로닉스",
-        "전기",
-        "용접",
-        "설계",
-      ],
+      keywords: ["기계", "자동차", "금형", "메카트로닉스", "전기", "용접", "설계"],
     },
     공정관리: {
       essential: ["일반기계기사", "산업안전기사"],
@@ -197,29 +161,13 @@ const JobMajorMatchingSystem = () => {
       essential: ["기계설계기사"],
       highMatch: ["일반기계기사", "자동차정비기사", "전산응용기계제도기능사"],
       mediumMatch: ["전기기사", "전자기사", "메카트로닉스기사"],
-      keywords: [
-        "설계",
-        "기계",
-        "자동차",
-        "전산",
-        "제도",
-        "전기",
-        "메카트로닉스",
-      ],
+      keywords: ["설계", "기계", "자동차", "전산", "제도", "전기", "메카트로닉스"],
     },
     안전관리: {
       essential: ["산업안전기사", "산업안전산업기사"],
       highMatch: ["건설안전기사", "화학안전기사", "가스안전기사"],
       mediumMatch: ["위험물기능사", "소방설비기사"],
-      keywords: [
-        "안전",
-        "산업안전",
-        "건설안전",
-        "화학안전",
-        "가스",
-        "위험물",
-        "소방",
-      ],
+      keywords: ["안전", "산업안전", "건설안전", "화학안전", "가스", "위험물", "소방"],
     },
   };
 
@@ -318,7 +266,6 @@ const JobMajorMatchingSystem = () => {
       const major = applicant["전공"] || "";
       const certificates = applicant["자격증"] || "";
 
-      // 지원직무가 없으면 평가 불가
       if (!jobRole) {
         return {
           이름: name,
@@ -383,7 +330,6 @@ const JobMajorMatchingSystem = () => {
       };
     });
 
-    // 지원직무별, 종합점수 순으로 정렬
     evaluated.sort((a, b) => {
       if (a.지원직무 !== b.지원직무) {
         return a.지원직무.localeCompare(b.지원직무);
@@ -425,7 +371,7 @@ const JobMajorMatchingSystem = () => {
         자격증: "품질경영기사",
       },
       {
-        이름: "홍길동",
+        이름: "정수진",
         생년월일: "1997.01.12",
         지원직무: "안전관리",
         전공: "안전공학",
@@ -712,7 +658,7 @@ const JobMajorMatchingSystem = () => {
                             </td>
                             <td className="p-3 text-center">
                               <span
-                                className={`px-4 py-2rounded-full text-lg font-bold ${
+                                className={`px-4 py-2 rounded-full text-lg font-bold ${
                                   app.평가등급 === "S"
                                     ? "bg-gradient-to-r from-red-500 to-pink-600 text-white"
                                     : app.평가등급 === "A"
