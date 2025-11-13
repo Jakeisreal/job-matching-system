@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Award, BookOpen, Briefcase, CheckCircle, Users, Upload, Download, FileSpreadsheet } from "lucide-react";
+import { Search, Award, BookOpen, Briefcase, CheckCircle, Users, Upload, Download, FileSpreadsheet, RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const JobMajorMatchingSystem = () => {
@@ -22,6 +22,74 @@ const JobMajorMatchingSystem = () => {
   const [uploadedData, setUploadedData] = useState([]);
   const [evaluatedData, setEvaluatedData] = useState([]);
   const [viewMode, setViewMode] = useState("manual");
+  const [apiMajorData, setApiMajorData] = useState([]);
+  const [apiQualificationData, setApiQualificationData] = useState([]);
+  const [isLoadingApi, setIsLoadingApi] = useState(false);
+  const [apiError, setApiError] = useState(null);
+
+  // API 데이터 로딩 함수
+  const loadApiData = async () => {
+    setIsLoadingApi(true);
+    setApiError(null);
+    
+    try {
+      // 1. 학과 정보 API 호출
+      const majorApiUrl = "https://api.data.go.kr/openapi/tn_pubr_public_univ_major_api";
+      const majorParams = new URLSearchParams({
+        serviceKey: "LmjU88/8+h7j1wt9zMIxaoRVs8tG3MtqIX8CvEiHeGmgZIK0+ZerkxsMwvWgqu4VxtlOqJhmGDysq2Pki4h/w==",
+        pageNo: "1",
+        numOfRows: "1000",
+        type: "json"
+      });
+      
+      const majorResponse = await fetch(`${majorApiUrl}?${majorParams}`);
+      const majorData = await majorResponse.json();
+      
+      if (majorData.response?.body?.items) {
+        setApiMajorData(majorData.response.body.items);
+        console.log("학과 데이터 로드 완료:", majorData.response.body.items.length);
+      }
+
+      // 2. 자격증 정보 API 호출
+      const qualApiUrl = "https://openapi.q-net.or.kr/api/service/rest/InquiryListNationalQualificationSVC";
+      const qualParams = new URLSearchParams({
+        serviceKey: "LmjU88/8+h7j1wt9zMIxaoRVs8tG3MtqIX8CvEiHeGmgZIK0+ZerkxsMwvWgqu4VxtlOqJhmGDysq2Pki4h/w==",
+        numOfRows: "1000"
+      });
+      
+      const qualResponse = await fetch(`${qualApiUrl}?${qualParams}`);
+      const qualText = await qualResponse.text();
+      
+      // XML 파싱
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(qualText, "text/xml");
+      const items = xmlDoc.getElementsByTagName("item");
+      
+      const qualifications = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const jmNm = item.getElementsByTagName("jmNm")[0]?.textContent;
+        const jmCd = item.getElementsByTagName("jmCd")[0]?.textContent;
+        if (jmNm) {
+          qualifications.push({ name: jmNm, code: jmCd });
+        }
+      }
+      
+      setApiQualificationData(qualifications);
+      console.log("자격증 데이터 로드 완료:", qualifications.length);
+      
+    } catch (error) {
+      console.error("API 로딩 오류:", error);
+      setApiError("API 데이터 로딩에 실패했습니다. 기본 데이터로 진행합니다.");
+    } finally {
+      setIsLoadingApi(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 API 데이터 로드
+  useEffect(() => {
+    loadApiData();
+  }, []);
 
   const jobMajorRules = {
     HR: {
@@ -165,15 +233,47 @@ const JobMajorMatchingSystem = () => {
     const rules = jobMajorRules[jobRole];
     if (!rules) return { score: 50, level: "medium", reason: "기본 매칭" };
     const majorName = major.toLowerCase();
+    
+    // API 데이터와 매칭 확인
+    let apiMatch = null;
+    if (apiMajorData.length > 0) {
+      apiMatch = apiMajorData.find(item => {
+        const apiMajorName = (item.majorNm || item.lClass || "").toLowerCase();
+        return apiMajorName.includes(majorName) || majorName.includes(apiMajorName);
+      });
+    }
+    
     for (const kw of rules.highMatch)
       if (majorName.includes(kw.toLowerCase()))
-        return { score: 95, level: "high", reason: `${kw}은(는) 핵심 전공` };
+        return { 
+          score: 95, 
+          level: "high", 
+          reason: `${kw}은(는) 핵심 전공${apiMatch ? " (API 확인)" : ""}` 
+        };
     for (const kw of rules.mediumMatch)
       if (majorName.includes(kw.toLowerCase()))
-        return { score: 75, level: "medium", reason: `${kw}은(는) 관련 전공` };
+        return { 
+          score: 75, 
+          level: "medium", 
+          reason: `${kw}은(는) 관련 전공${apiMatch ? " (API 확인)" : ""}` 
+        };
     for (const kw of rules.keywords)
       if (majorName.includes(kw))
-        return { score: 60, level: "low", reason: `${kw} 관련 전공` };
+        return { 
+          score: 60, 
+          level: "low", 
+          reason: `${kw} 관련 전공${apiMatch ? " (API 확인)" : ""}` 
+        };
+    
+    // API 데이터에서만 매칭되는 경우
+    if (apiMatch) {
+      return { 
+        score: 70, 
+        level: "medium", 
+        reason: "API 데이터 기반 매칭" 
+      };
+    }
+    
     return { score: 40, level: "none", reason: "연관성 낮음" };
   };
 
@@ -187,12 +287,22 @@ const JobMajorMatchingSystem = () => {
         isEssential: false,
       };
     const certName = certificate.toLowerCase();
+    
+    // API 데이터와 매칭 확인
+    let apiMatch = null;
+    if (apiQualificationData.length > 0) {
+      apiMatch = apiQualificationData.find(item => {
+        const apiCertName = (item.name || "").toLowerCase();
+        return apiCertName.includes(certName) || certName.includes(apiCertName);
+      });
+    }
+    
     for (const kw of rules.essential)
       if (certName.includes(kw.toLowerCase()))
         return {
           score: 100,
           level: "essential",
-          reason: `${kw}은(는) 필수 자격증`,
+          reason: `${kw}은(는) 필수 자격증${apiMatch ? " (API 확인)" : ""}`,
           isEssential: true,
         };
     for (const kw of rules.highMatch)
@@ -200,7 +310,7 @@ const JobMajorMatchingSystem = () => {
         return {
           score: 90,
           level: "high",
-          reason: `${kw}은(는) 우대 자격증`,
+          reason: `${kw}은(는) 우대 자격증${apiMatch ? " (API 확인)" : ""}`,
           isEssential: false,
         };
     for (const kw of rules.mediumMatch)
@@ -208,7 +318,7 @@ const JobMajorMatchingSystem = () => {
         return {
           score: 70,
           level: "medium",
-          reason: `${kw}은(는) 관련 자격증`,
+          reason: `${kw}은(는) 관련 자격증${apiMatch ? " (API 확인)" : ""}`,
           isEssential: false,
         };
     for (const kw of rules.keywords)
@@ -216,9 +326,20 @@ const JobMajorMatchingSystem = () => {
         return {
           score: 55,
           level: "low",
-          reason: `${kw} 관련 자격증`,
+          reason: `${kw} 관련 자격증${apiMatch ? " (API 확인)" : ""}`,
           isEssential: false,
         };
+    
+    // API 데이터에서만 매칭되는 경우
+    if (apiMatch) {
+      return {
+        score: 65,
+        level: "medium",
+        reason: "API 데이터 기반 매칭",
+        isEssential: false,
+      };
+    }
+    
     return {
       score: 35,
       level: "none",
@@ -351,6 +472,32 @@ const JobMajorMatchingSystem = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6 border-t-4 border-blue-600">
           <h1 className="text-4xl font-bold">직무 역량 매칭 평가 시스템</h1>
           <p className="text-gray-600 mt-2">엑셀 파일 업로드로 대량 평가를 수행하거나 개별 검색이 가능합니다</p>
+          
+          {/* API 상태 표시 */}
+          <div className="mt-4 flex items-center gap-3">
+            {isLoadingApi ? (
+              <div className="flex items-center gap-2 text-blue-600">
+                <RefreshCw className="animate-spin" size={20} />
+                <span>공공데이터 API 연동 중...</span>
+              </div>
+            ) : apiError ? (
+              <div className="flex items-center gap-2 text-orange-600">
+                <span>⚠️ {apiError}</span>
+                <button onClick={loadApiData} className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm">
+                  재시도
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle size={20} />
+                <span>API 연동 완료 (학과: {apiMajorData.length}개, 자격증: {apiQualificationData.length}개)</span>
+                <button onClick={loadApiData} className="px-3 py-1 bg-gray-200 rounded-lg text-sm text-gray-700">
+                  새로고침
+                </button>
+              </div>
+            )}
+          </div>
+          
           <div className="flex gap-3 mt-4">
             <button onClick={() => setViewMode("manual")} className={`px-6 py-3 rounded-xl font-bold ${viewMode === "manual" ? "bg-blue-600 text-white" : "bg-gray-100"}`}>
               개별 검색
@@ -367,7 +514,7 @@ const JobMajorMatchingSystem = () => {
             <button onClick={downloadTemplate} className="px-6 py-3 bg-green-500 text-white rounded-xl mb-4">
               템플릿 다운로드
             </button>
-            <label className="block px-6 py-3 bg-blue-600 text-white rounded-xl cursor-pointer inline-block">
+            <label className="block px-6 py-3 bg-blue-600 text-white rounded-xl cursor-pointer inline-block ml-3">
               <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
               파일 선택
             </label>
@@ -387,6 +534,7 @@ const JobMajorMatchingSystem = () => {
                         <th className="p-3">지원직무</th>
                         <th className="p-3">전공</th>
                         <th className="p-3">전공점수</th>
+                        <th className="p-3">전공평가</th>
                         <th className="p-3">자격증</th>
                         <th className="p-3">자격증점수</th>
                         <th className="p-3">필수보유</th>
@@ -396,13 +544,14 @@ const JobMajorMatchingSystem = () => {
                     </thead>
                     <tbody>
                       {evaluatedData.map((app, idx) => (
-                        <tr key={idx} className="border-b">
+                        <tr key={idx} className="border-b hover:bg-gray-50">
                           <td className="p-3 text-center">{idx + 1}</td>
                           <td className="p-3">{app.이름}</td>
                           <td className="p-3">{app.생년월일}</td>
                           <td className="p-3">{app.지원직무}</td>
                           <td className="p-3">{app.전공}</td>
                           <td className="p-3 text-center">{app.전공점수}</td>
+                          <td className="p-3 text-sm text-gray-600">{app.전공평가}</td>
                           <td className="p-3">{app.자격증}</td>
                           <td className="p-3 text-center">{app.자격증평균점수}</td>
                           <td className="p-3 text-center">{app.필수자격증보유}</td>
@@ -432,25 +581,61 @@ const JobMajorMatchingSystem = () => {
                 <h3 className="text-xl font-bold mb-4">{selectedJob.role} - 직무 정보</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-bold mb-2">핵심 전공</h4>
+                    <h4 className="font-bold mb-2 flex items-center gap-2">
+                      <BookOpen size={20} />
+                      핵심 전공
+                    </h4>
                     <ul className="space-y-1">
                       {jobMajorRules[selectedJob.role]?.highMatch.map((major, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                          <span className="text-blue-600">★</span>
+                          {major}
+                        </li>
+                      ))}
+                    </ul>
+                    <h4 className="font-bold mt-4 mb-2">관련 전공</h4>
+                    <ul className="space-y-1">
+                      {jobMajorRules[selectedJob.role]?.mediumMatch.map((major, idx) => (
                         <li key={idx}>• {major}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-bold mb-2">필수/우대 자격증</h4>
+                    <h4 className="font-bold mb-2 flex items-center gap-2">
+                      <Award size={20} />
+                      필수/우대 자격증
+                    </h4>
+                    {jobCertificateRules[selectedJob.role]?.essential.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm text-red-600 font-bold mb-1">필수 자격증</p>
+                        <ul className="space-y-1">
+                          {jobCertificateRules[selectedJob.role]?.essential.map((cert, idx) => (
+                            <li key={idx} className="text-red-600 flex items-center gap-2">
+                              <CheckCircle size={16} />
+                              {cert}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <p className="text-sm text-blue-600 font-bold mb-1">우대 자격증</p>
                     <ul className="space-y-1">
-                      {jobCertificateRules[selectedJob.role]?.essential.map((cert, idx) => (
-                        <li key={idx} className="text-red-600">★ {cert} (필수)</li>
-                      ))}
-                      {jobCertificateRules[selectedJob.role]?.highMatch.slice(0,3).map((cert, idx) => (
+                      {jobCertificateRules[selectedJob.role]?.highMatch.slice(0,5).map((cert, idx) => (
                         <li key={idx}>• {cert}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
+                
+                {/* API 데이터 활용 정보 */}
+                {apiMajorData.length > 0 && (
+                  <div className="mt-6 p-4 bg-white rounded-lg border border-blue-200">
+                    <h4 className="font-bold mb-2 text-blue-700">📊 공공데이터 연동 정보</h4>
+                    <p className="text-sm text-gray-600">
+                      평가 시 {apiMajorData.length}개 학과 정보와 {apiQualificationData.length}개 자격증 정보가 실시간으로 비교됩니다.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
